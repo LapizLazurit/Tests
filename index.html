@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Тест по JavaScript</title>
+<style>
+:root{color-scheme:light;--bg:#f3f5fb;--card:#fff;--ink:#182033;--muted:#68738a;--accent:#5b5bd6;--good:#16834a;--bad:#c0394b}
+*{box-sizing:border-box}body{margin:0;padding:24px 14px 48px;background:var(--bg);font:16px/1.5 system-ui,-apple-system,Segoe UI,Arial,sans-serif;color:var(--ink)}
+main{max-width:760px;margin:auto}.hero,.question,.result{background:var(--card);border-radius:18px;padding:22px;margin-bottom:16px;box-shadow:0 5px 22px #1820330d}
+h1{font-size:clamp(25px,5vw,34px);line-height:1.15;margin:0 0 8px}.sub,.hint{color:var(--muted)}.bar{height:8px;background:#e7e9f3;border-radius:99px;overflow:hidden;margin-top:16px}.fill{height:100%;width:0;background:var(--accent);transition:width .2s}
+.qtop{display:flex;justify-content:space-between;gap:10px;color:var(--muted);font-size:14px;margin-bottom:8px}.question h2{font-size:18px;margin:0 0 14px}
+label.option{display:flex;align-items:flex-start;gap:11px;padding:12px 13px;border:1px solid #e1e5ef;border-radius:12px;margin:9px 0;cursor:pointer;transition:.15s}
+label.option:has(input:checked){border-color:var(--accent);background:#f2f2ff}
+input{accent-color:var(--accent);margin-top:4px;flex-shrink:0}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin:20px 0}
+button{border:0;border-radius:12px;padding:13px 18px;font-weight:650;font-size:15px;cursor:pointer}
+.primary{background:var(--accent);color:white}.secondary{background:#e7e9f3;color:var(--ink)}button:disabled{opacity:.45;cursor:not-allowed}
+#result{display:none}.score{font-size:38px;font-weight:800;margin:5px 0}.review{padding:12px 0;border-top:1px solid #e8eaf1}.correct{color:var(--good)}.incorrect{color:var(--bad)}
+@media(max-width:480px){body{padding:14px 10px 32px}.hero,.question,.result{padding:17px;border-radius:15px}}
+</style>
+</head>
+<body>
+<main>
+<section class="hero">
+<h1>Тест по JavaScript</h1>
+<div class="sub">20 вопросов · 3 варианта ответа · выбери один правильный ответ</div>
+<div class="qtop" style="margin-top:18px"><span id="progressText">Отвечено: 0 из 20</span><span id="progressPct">0%</span></div>
+<div class="bar"><div class="fill" id="progress"></div></div>
+</section>
+<form id="quiz"></form>
+<div class="actions" id="actions">
+<button class="primary" id="finish" type="button">Проверить ответы</button>
+<button class="secondary" id="reset" type="button">Сбросить</button>
+</div>
+<section class="result" id="result" aria-live="polite">
+<h2>Результат</h2><div class="score" id="score"></div><p id="message"></p>
+<h3>Разбор ответов</h3><div id="review"></div>
+<div class="actions"><button class="primary" id="again" type="button">Пройти ещё раз</button></div>
+</section>
+<p class="hint">Источник вопросов: <a href="https://ru.wikipedia.org/wiki/JavaScript" target="_blank" rel="noopener">статья «JavaScript» в Википедии</a>.</p>
+</main>
+<script>
+const questions = [
+["Что такое JavaScript?",["Язык программирования","Операционная система","Графический редактор"],0],
+["В каком году появился JavaScript?",["1990","1995","2000"],1],
+["Кто создал JavaScript?",["Билл Гейтс","Джеймс Гослинг","Брендан Эйх"],2],
+["В какой компании был разработан JavaScript?",["Microsoft","Netscape","Google"],1],
+["Какое основное применение JavaScript?",["Создание интерактивных веб-страниц","Монтаж видео","Управление операционной системой"],0],
+["Какое расширение обычно имеют файлы JavaScript?",[".html",".css",".js"],2],
+["Как называется стандарт JavaScript?",["HTML5","ECMAScript","CSS"],1],
+["Является ли JavaScript тем же языком, что и Java?",["Нет, это разные языки","Да, это один язык","Java является частью JavaScript"],0],
+["Какой тип типизации используется в JavaScript?",["Только статическая","Динамическая","Отсутствует типизация"],1],
+["Что означает DOM?",["Система управления файлами","Язык разметки","Объектная модель документа"],2],
+["Для чего используется BOM?",["Для взаимодействия с объектами браузера","Для создания таблиц","Для хранения изображений"],0],
+["Какая модель позволяет JavaScript изменять HTML-страницу?",["JSON","DOM","SQL"],1],
+["Какой HTML-элемент используется для подключения JavaScript?",["<style>","<link>","<script>"],2],
+["Какой язык повлиял на разработку JavaScript?",["Scheme","Pascal","Fortran"],0],
+["Как называется движок JavaScript, созданный Бренданом Эйхом?",["V8","SpiderMonkey","Rhino"],1],
+["Что означает мультипарадигменность JavaScript?",["Поддержка нескольких стилей программирования","Работа только с числами","Использование одного алгоритма"],0],
+["Что позволяет JavaScript делать на веб-странице?",["Только изменять цвет фона","Только отображать текст","Обрабатывать действия пользователя и изменять содержимое"],2],
+["Как называется технология асинхронного обмена данными, упоминаемая в статье?",["AJAX","BIOS","FTP"],0],
+["Где может использоваться JavaScript помимо браузеров?",["Только в текстовых редакторах","На сервере и в приложениях","Только в операционных системах"],1],
+["Какая особенность характерна для JavaScript?",["Ручное управление всей памятью","Отсутствие функций","Автоматическое управление памятью"],2]
+];
+const form=document.getElementById('quiz');
+questions.forEach((q,i)=>{
+ const section=document.createElement('section');section.className='question';
+ const top=document.createElement('div');top.className='qtop';top.innerHTML=`<span>Вопрос ${i+1}</span><span>1 балл</span>`;
+ const title=document.createElement('h2');title.textContent=q[0];section.append(top,title);
+ q[1].forEach((choice,j)=>{
+  const label=document.createElement('label');label.className='option';
+  const input=document.createElement('input');input.type='radio';input.name=`q${i}`;input.value=j;
+  input.addEventListener('change',updateProgress);
+  const span=document.createElement('span');span.textContent=String.fromCharCode(65+j)+') '+choice;
+  label.append(input,span);section.append(label);
+ });
+ form.append(section);
+});
+function updateProgress(){
+ const count=questions.filter((_,i)=>form.querySelector(`input[name="q${i}"]:checked`)).length;
+ document.getElementById('progressText').textContent=`Отвечено: ${count} из ${questions.length}`;
+ document.getElementById('progressPct').textContent=Math.round(count/questions.length*100)+'%';
+ document.getElementById('progress').style.width=(count/questions.length*100)+'%';
+}
+function finish(){
+ const answers=questions.map((_,i)=>form.querySelector(`input[name="q${i}"]:checked`));
+ if(answers.some(a=>!a)){const first=answers.findIndex(a=>!a);alert(`Ответь на все вопросы. Осталось: ${answers.filter(a=>!a).length}.`);form.children[first].scrollIntoView({behavior:'smooth',block:'center'});return;}
+ let points=0;const review=document.getElementById('review');review.innerHTML='';
+ questions.forEach((q,i)=>{
+  const chosen=Number(answers[i].value),ok=chosen===q[2];if(ok)points++;
+  const div=document.createElement('div');div.className='review';
+  const strong=document.createElement('strong');strong.className=ok?'correct':'incorrect';strong.textContent=`${i+1}. ${ok?'Верно':'Неверно'}`;
+  const p=document.createElement('p');p.textContent=`Твой ответ: ${q[1][chosen]}`;
+  div.append(strong,p);
+  if(!ok){const correct=document.createElement('p');correct.className='correct';correct.textContent=`Правильный ответ: ${q[1][q[2]]}`;div.append(correct);}
+  review.append(div);
+ });
+ document.getElementById('score').textContent=`${points} / ${questions.length}`;
+ document.getElementById('message').textContent=points>=18?'Отличный результат!':points>=14?'Хороший результат.':'Повтори темы и попробуй ещё раз.';
+ document.getElementById('result').style.display='block';
+ document.getElementById('result').scrollIntoView({behavior:'smooth'});
+}
+function resetQuiz(){form.reset();updateProgress();document.getElementById('result').style.display='none';window.scrollTo({top:0,behavior:'smooth'});}
+document.getElementById('finish').addEventListener('click',finish);
+document.getElementById('reset').addEventListener('click',resetQuiz);
+document.getElementById('again').addEventListener('click',resetQuiz);
+</script>
+</body>
+</html>
